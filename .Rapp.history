@@ -1,0 +1,39 @@
+# creates a map of occupancy probability estimates#
+# case study is on lynx in the French Alps#
+#
+# a single-season occupancy model was fitted #
+# to detection/non-detection data; initial occupancy #
+# is a function of forest cover while species detection#
+# has a site-random effect on it#
+#
+# see Gimenez, O., L. Blanc, A. Besnard, R. Pradel, P. F. Doherty Jr, E. Marboutin and R. Choquet (2014). #
+# Fitting occupancy models with E-SURGE: hidden-Markov modelling of presence-absence data. #
+# Methods in Ecology and Evolution. 5: 592–597.#
+# freely available from: https://dl.dropboxusercontent.com/u/23160641/my-pubs/Gimenezetal2014.pdf#
+#
+library(rgdal)#
+library(RColorBrewer)#
+#
+# read in grid with forest cover#
+lynx <- readOGR(".", "lynx")#
+names(lynx@data)
+# occupancy estimates from model psi(forest),p(random)#
+l_psi <- -3.12 + 9.33 * lynx@data$forest # on the logit scale#
+psi <- 1/(1+exp(-l_psi)) # back-transformed#
+lynx@data$occ <- as.vector(psi) # store in the shp
+grid_occ <- quantile(lynx@data$occ,probs=seq(0, 1, 0.11))#
+round(grid_occ,2)
+# get quantiles of forest cover#
+grid_forest <- quantile(lynx@data$forest,probs=seq(0, 1, 0.11))#
+grid_forest#
+#
+# palette of greys (9 levels)#
+cols <- brewer.pal(n=9,name="Greys") #
+#
+# map forest cover and occupancy estimates side by side#
+par(mfrow=c(1,2))#
+#
+# forest cover first#
+lcols_f <- cut(lynx@data$forest,breaks= grid_forest,labels=cols) # discretize forest cover using quantiles#
+plot(lynx, axes=TRUE,border="gray",main='forest cover') # background grid#
+plot(lynx, col=as.character(lcols_f), add=TRUE) # add forest cover
